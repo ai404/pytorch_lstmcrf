@@ -89,9 +89,9 @@ if __name__ == "__main__":
     # Testing the Tokenizer
     tokenizer = BertWordPieceTokenizer(f'{DISTILBERT_PATH}/vocab.txt', lowercase=True)
 
-    train_wrap = TokenizerWrapper("train", tokenizer)
+    train_wrap = TokenizerWrapper("train.txt", tokenizer)
     train_wrap.save()
-    dev_wrap = TokenizerWrapper("dev", tokenizer)
+    dev_wrap = TokenizerWrapper("dev.txt", tokenizer)
     dev_wrap.save()
-    test_wrap = TokenizerWrapper("test", tokenizer)
+    test_wrap = TokenizerWrapper("test.txt", tokenizer)
     test_wrap.save()
