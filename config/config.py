@@ -232,13 +232,16 @@ class Config:
 
     def map_tokens_ids(self, insts: List[Instance], tokenizer):
         for inst in insts:
+            inst.output_ids = [] if inst.output else None
             tokens = inst.input.words
 
             to_ignore_none = lambda x: x if x is not None else 0
             to_id = lambda x:to_ignore_none(tokenizer.token_to_id(x))
             
             inst.word_ids = list(map(to_id, tokens))
-            
+            if inst.output:
+                for label in inst.output:
+                    inst.output_ids.append(self.label2idx[label])
     def map_insts_ids(self, insts: List[Instance]):
         """
         Create id for word, char and label in each instance.
