@@ -5,7 +5,7 @@ import torch.nn as nn
 from config import ContextEmb
 from model.charbilstm import CharBiLSTM
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-
+import transformers
 from overrides import overrides
 
 class BiLSTMEncoder(nn.Module):
@@ -22,13 +22,15 @@ class BiLSTMEncoder(nn.Module):
         self.labels = config.idx2labels
 
         self.input_size = config.embedding_dim
-        if self.context_emb != ContextEmb.none:
-            self.input_size += config.context_emb_size
-        if self.use_char:
-            self.char_feature = CharBiLSTM(config, print_info=print_info)
-            self.input_size += config.charlstm_hidden_dim
-
-        self.word_embedding = nn.Embedding.from_pretrained(torch.FloatTensor(config.word_embedding), freeze=False).to(self.device)
+        if self.context_emb != ContextEmb.mbert:
+            if self.context_emb != ContextEmb.none:
+                self.input_size += config.context_emb_size
+            if self.use_char:
+                self.char_feature = CharBiLSTM(config, print_info=print_info)
+                self.input_size += config.charlstm_hidden_dim
+            self.word_embedding = nn.Embedding.from_pretrained(torch.FloatTensor(config.word_embedding), freeze=False).to(self.device)
+        else:
+            self.word_embedding = transformers.DistilBertModel.from_pretrained(config.bert_path.split("/")[-1],)
         self.word_drop = nn.Dropout(config.dropout).to(self.device)
 
         if print_info:
@@ -63,12 +65,14 @@ class BiLSTMEncoder(nn.Module):
         """
 
         word_emb = self.word_embedding(word_seq_tensor)
-        if self.context_emb != ContextEmb.none:
-            word_emb = torch.cat([word_emb, batch_context_emb.to(self.device)], 2)
-        if self.use_char:
-            char_features = self.char_feature(char_inputs, char_seq_lens)
-            word_emb = torch.cat([word_emb, char_features], 2)
-
+        if self.context_emb != ContextEmb.mbert:
+            if self.context_emb != ContextEmb.none:
+                word_emb = torch.cat([word_emb, batch_context_emb.to(self.device)], 2)
+            if self.use_char:
+                char_features = self.char_feature(char_inputs, char_seq_lens)
+                word_emb = torch.cat([word_emb, char_features], 2)
+        else:
+            word_emb = word_emb[0]
         word_rep = self.word_drop(word_emb)
 
 

@@ -20,8 +20,9 @@ PAD = "<PAD>"
 class ContextEmb(Enum):
     none = 0
     elmo = 1
-    bert = 2 # not support yet
+    fbert = 2 # not support yet
     flair = 3 # not support yet
+    mbert = 4 # not support yet
 
 
 class Config:
@@ -229,6 +230,15 @@ class Config:
                         if next_entity.startswith(self.O) or next_entity.startswith(self.B):
                             output[pos] = curr_entity.replace(self.I, self.E)
 
+    def map_tokens_ids(self, insts: List[Instance], tokenizer):
+        for inst in insts:
+            tokens = inst.input.words
+
+            to_ignore_none = lambda x: x if x is not None else 0
+            to_id = lambda x:to_ignore_none(tokenizer.token_to_id(x))
+            
+            inst.word_ids = list(map(to_id, tokens))
+            
     def map_insts_ids(self, insts: List[Instance]):
         """
         Create id for word, char and label in each instance.

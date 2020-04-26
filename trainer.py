@@ -53,7 +53,7 @@ def parse_arguments(parser):
     parser.add_argument('--hidden_dim', type=int, default=200, help="hidden size of the LSTM")
     parser.add_argument('--dropout', type=float, default=0.5, help="dropout for embedding")
     parser.add_argument('--use_char_rnn', type=int, default=1, choices=[0, 1], help="use character-level lstm, 0 or 1")
-    parser.add_argument('--context_emb', type=str, default="none", choices=["none", "elmo", "bert"],
+    parser.add_argument('--context_emb', type=str, default="none", choices=["none", "elmo", "fbert", "mbert"],
                         help="contextual word embedding")
 
     args = parser.parse_args()
@@ -175,7 +175,7 @@ def main():
     devs = reader.read_txt(conf.dev_file, conf.dev_num)
     tests = reader.read_txt(conf.test_file, conf.test_num)
 
-    if conf.context_emb != ContextEmb.none:
+    if conf.context_emb not in [ContextEmb.none, ContextEmb.mbert]:
         print('Loading the ELMo vectors for all datasets.')
         conf.context_emb_size = load_elmo_vec(conf.train_file + "." + conf.context_emb.name + ".vec", trains)
         load_elmo_vec(conf.dev_file + "." + conf.context_emb.name + ".vec", devs)
@@ -186,17 +186,26 @@ def main():
     conf.use_iobes(tests)
     conf.build_label_idx(trains + devs + tests)
 
-    conf.build_word_idx(trains, devs, tests)
-    conf.build_emb_table()
+    if conf.context_emb == ContextEmb.mbert:
+        from tokenizers import BertWordPieceTokenizer
 
-    conf.map_insts_ids(trains)
-    conf.map_insts_ids(devs)
-    conf.map_insts_ids(tests)
+        conf.bert_path = f'data/{conf.dataset}/distilbert-base-uncased'
+        tokenizer = BertWordPieceTokenizer(f'{conf.bert_path}/vocab.txt', lowercase=True)
+        conf.map_tokens_ids(trains, tokenizer)
+        conf.map_tokens_ids(devs, tokenizer)
+        conf.map_tokens_ids(tests, tokenizer)
+    else:
+        conf.build_word_idx(trains, devs, tests)
+        conf.build_emb_table()
 
-    print("num chars: " + str(conf.num_char))
-    # print(str(config.char2idx))
+        conf.map_insts_ids(trains)
+        conf.map_insts_ids(devs)
+        conf.map_insts_ids(tests)
 
-    print("num words: " + str(len(conf.word2idx)))
+        print("num chars: " + str(conf.num_char))
+        # print(str(config.char2idx))
+
+        print("num words: " + str(len(conf.word2idx)))
     # print(config.word2idx)
     train_model(conf, conf.num_epochs, trains, devs, tests)
 

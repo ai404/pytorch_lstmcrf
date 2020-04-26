@@ -89,11 +89,12 @@ def read_parse_write(bert: DistilBertModel, bert_path: str, infile: str, outfile
 
     batch_size = max(1, batch_size)# make sure batch_size is gt 0
     dataloader = DataLoader(dataset, batch_size=batch_size,shuffle=False, num_workers=4)
-    for i, (batch, n_pads) in tqdm(enumerate(dataloader)):
-        # TODO enable gpu later
-        batch = batch.cuda() if CUDA else batch
+    for _, (batch, n_pads) in tqdm(enumerate(dataloader)):
         with torch.no_grad():
-            bert_batch_vecs = bert(batch)[0].cuda().cpu().numpy()
+            batch = batch.cuda() if CUDA else batch
+            bert = bert.cuda() if CUDA else bert
+
+            bert_batch_vecs = bert(batch)[0].cpu().numpy()
             vectors = parse_sentence(bert_batch_vecs, mode=mode)
             for j in range(vectors.shape[0]):
                 all_vecs.append(vectors[j,:-n_pads[j],:])

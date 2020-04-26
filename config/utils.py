@@ -54,35 +54,41 @@ def simple_batching(config, insts: List[Instance]) -> Tuple[torch.Tensor, torch.
     max_seq_len = word_seq_len.max()
 
     # NOTE: Use 1 here because the CharBiLSTM accepts
-    char_seq_len = torch.LongTensor([list(map(len, inst.input.words)) + [1] * (int(max_seq_len) - len(inst.input.words)) for inst in batch_data])
-    max_char_seq_len = char_seq_len.max()
+    char_seq_len = None
+    char_seq_tensor = None
+    if config.context_emb != ContextEmb.mbert:
+        char_seq_len = torch.LongTensor([list(map(len, inst.input.words)) + [1] * (int(max_seq_len) - len(inst.input.words)) for inst in batch_data])
+        max_char_seq_len = char_seq_len.max()
 
     context_emb_tensor = None
-    if config.context_emb != ContextEmb.none:
+    if config.context_emb not in [ContextEmb.none, ContextEmb.mbert]:
         emb_size = insts[0].elmo_vec.shape[1]
         context_emb_tensor = torch.zeros((batch_size, max_seq_len, emb_size))
 
     word_seq_tensor = torch.zeros((batch_size, max_seq_len), dtype=torch.long)
     label_seq_tensor =  torch.zeros((batch_size, max_seq_len), dtype=torch.long)
-    char_seq_tensor = torch.zeros((batch_size, max_seq_len, max_char_seq_len), dtype=torch.long)
+    if config.context_emb != ContextEmb.mbert:
+        char_seq_tensor = torch.zeros((batch_size, max_seq_len, max_char_seq_len), dtype=torch.long)
 
     for idx in range(batch_size):
         word_seq_tensor[idx, :word_seq_len[idx]] = torch.LongTensor(batch_data[idx].word_ids)
         if batch_data[idx].output_ids:
             label_seq_tensor[idx, :word_seq_len[idx]] = torch.LongTensor(batch_data[idx].output_ids)
-        if config.context_emb != ContextEmb.none:
+        if config.context_emb not in [ContextEmb.none, ContextEmb.mbert]:
             context_emb_tensor[idx, :word_seq_len[idx], :] = torch.from_numpy(batch_data[idx].elmo_vec)
 
-        for word_idx in range(word_seq_len[idx]):
-            char_seq_tensor[idx, word_idx, :char_seq_len[idx, word_idx]] = torch.LongTensor(batch_data[idx].char_ids[word_idx])
-        for wordIdx in range(word_seq_len[idx], max_seq_len):
-            char_seq_tensor[idx, wordIdx, 0: 1] = torch.LongTensor([config.char2idx[PAD]])   ###because line 119 makes it 1, every single character should have a id. but actually 0 is enough
+        if config.context_emb != ContextEmb.mbert:
+            for word_idx in range(word_seq_len[idx]):
+                char_seq_tensor[idx, word_idx, :char_seq_len[idx, word_idx]] = torch.LongTensor(batch_data[idx].char_ids[word_idx])
+            for wordIdx in range(word_seq_len[idx], max_seq_len):
+                char_seq_tensor[idx, wordIdx, 0: 1] = torch.LongTensor([config.char2idx[PAD]])   ###because line 119 makes it 1, every single character should have a id. but actually 0 is enough
 
     word_seq_tensor = word_seq_tensor.to(config.device)
     label_seq_tensor = label_seq_tensor.to(config.device)
-    char_seq_tensor = char_seq_tensor.to(config.device)
     word_seq_len = word_seq_len.to(config.device)
-    char_seq_len = char_seq_len.to(config.device)
+    if config.context_emb != ContextEmb.mbert:
+        char_seq_tensor = char_seq_tensor.to(config.device)
+        char_seq_len = char_seq_len.to(config.device)
 
     return word_seq_tensor, word_seq_len, context_emb_tensor, char_seq_tensor, char_seq_len, label_seq_tensor
 
