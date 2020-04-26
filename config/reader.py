@@ -27,8 +27,9 @@ class Reader:
             labels = []
             for line in tqdm(f.readlines()):
                 line = line.rstrip()
-                if line == "" and (category=="all" or words[0]==category):
-                    insts.append(Instance(Sentence(words[1:], ori_words[1:]), labels[1:]))
+                if line == "":
+                    if category=="all" or words[0]==category:
+                        insts.append(Instance(Sentence(words[1:], ori_words[1:]), labels[1:]))
                     words = []
                     ori_words = []
                     labels = []
