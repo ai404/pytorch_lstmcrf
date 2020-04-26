@@ -30,7 +30,7 @@ class BiLSTMEncoder(nn.Module):
                 self.input_size += config.charlstm_hidden_dim
             self.word_embedding = nn.Embedding.from_pretrained(torch.FloatTensor(config.word_embedding), freeze=False).to(self.device)
         else:
-            self.word_embedding = transformers.DistilBertModel.from_pretrained(config.bert_path.split("/")[-1],)
+            self.word_embedding = transformers.DistilBertModel.from_pretrained(config.bert_path.split("/")[-1],).to(self.device)
             for param in self.word_embedding.parameters():
                 param.requires_grad = False
         self.word_drop = nn.Dropout(config.dropout).to(self.device)
