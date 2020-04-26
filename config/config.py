@@ -64,6 +64,7 @@ class Config:
 
         # Data specification
         self.dataset = args.dataset
+        self.category = args.category
         self.train_file = "data/" + self.dataset + "/train.txt"
         self.dev_file = "data/" + self.dataset + "/dev.txt"
         self.test_file = "data/" + self.dataset + "/test.txt"

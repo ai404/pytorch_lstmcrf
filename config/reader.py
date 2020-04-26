@@ -18,7 +18,7 @@ class Reader:
         self.digit2zero = digit2zero
         self.vocab = set()
 
-    def read_txt(self, file: str, number: int = -1) -> List[Instance]:
+    def read_txt(self, file: str, number: int = -1, category: str = "all") -> List[Instance]:
         print("Reading file: " + file)
         insts = []
         with open(file, 'r', encoding='utf-8') as f:
@@ -27,8 +27,8 @@ class Reader:
             labels = []
             for line in tqdm(f.readlines()):
                 line = line.rstrip()
-                if line == "":
-                    insts.append(Instance(Sentence(words, ori_words), labels))
+                if line == "" and (category=="all" or words[0]==category):
+                    insts.append(Instance(Sentence(words[1:], ori_words[1:]), labels[1:]))
                     words = []
                     ori_words = []
                     labels = []

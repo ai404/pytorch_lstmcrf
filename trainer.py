@@ -35,6 +35,7 @@ def parse_arguments(parser):
     parser.add_argument('--freeze_bert', action="store_true", default=False,
                         help="Freeze Bert weights")
     parser.add_argument('--dataset', type=str, default="conll2003")
+    parser.add_argument('--category', type=str, default="all")
     parser.add_argument('--embedding_file', type=str, default="data/glove.6B.100d.txt",
                         help="we will be using random embeddings if file do not exist")
     parser.add_argument('--embedding_dim', type=int, default=100)
@@ -173,9 +174,9 @@ def main():
     reader = Reader(conf.digit2zero)
     set_seed(opt, conf.seed)
 
-    trains = reader.read_txt(conf.train_file, conf.train_num)
-    devs = reader.read_txt(conf.dev_file, conf.dev_num)
-    tests = reader.read_txt(conf.test_file, conf.test_num)
+    trains = reader.read_txt(conf.train_file, conf.train_num, conf.category)
+    devs = reader.read_txt(conf.dev_file, conf.dev_num, conf.category)
+    tests = reader.read_txt(conf.test_file, conf.test_num, conf.category)
 
     if conf.context_emb not in [ContextEmb.none, ContextEmb.mbert]:
         print('Loading the ELMo vectors for all datasets.')
