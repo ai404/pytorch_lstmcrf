@@ -53,6 +53,7 @@ class Config:
         self.word_embedding = None
         self.seed = args.seed
         self.digit2zero = args.digit2zero
+        self.freeze_bert = args.freeze_bert
         self.hidden_dim = args.hidden_dim
         self.use_brnn = True
         self.num_layers = 1
